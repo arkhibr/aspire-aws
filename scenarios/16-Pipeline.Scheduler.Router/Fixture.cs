@@ -3,6 +3,8 @@ using Amazon.DynamoDBv2.Model;
 using Amazon.Lambda.Model;
 using Amazon.Scheduler;
 using Amazon.Scheduler.Model;
+using Amazon.SecurityToken;
+using Amazon.SecurityToken.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 using Shared;
@@ -106,6 +108,15 @@ public class Fixture : LocalStackFixture
 
         var produtora = await lambda.GetFunctionAsync(new GetFunctionRequest { FunctionName = NomeLambdaProdutora });
 
+        // Em modo AWS real, obtém o account ID via STS para construir o ARN correto da role.
+        // Em modo LocalStack, usa o account ID fictício padrão (000000000000).
+        string accountId;
+        using (var sts = AwsClientFactory.STS())
+        {
+            var identity = await sts.GetCallerIdentityAsync(new GetCallerIdentityRequest());
+            accountId = identity.Account;
+        }
+
         using var scheduler = AwsClientFactory.Scheduler();
         await scheduler.CreateScheduleAsync(new CreateScheduleRequest
         {
@@ -115,7 +126,7 @@ public class Fixture : LocalStackFixture
             Target = new Amazon.Scheduler.Model.Target
             {
                 Arn     = produtora.Configuration.FunctionArn,
-                RoleArn = $"arn:aws:iam::000000000000:role/{NomeAgendador}-role"
+                RoleArn = $"arn:aws:iam::{accountId}:role/{NomeAgendador}-role"
             }
         });
     }

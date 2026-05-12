@@ -7,6 +7,7 @@ using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.Scheduler;
 using Amazon.SecretsManager;
+using Amazon.SecurityToken;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SQS;
@@ -66,6 +67,11 @@ public static class AwsClientFactory
         ModoLocalStack
             ? new AmazonSchedulerClient(Credentials, Configure(new AmazonSchedulerConfig(), endpoint))
             : new AmazonSchedulerClient();
+
+    public static AmazonSecurityTokenServiceClient STS(string endpoint = LocalStackFixture.Endpoint) =>
+        ModoLocalStack
+            ? new AmazonSecurityTokenServiceClient(Credentials, Configure(new AmazonSecurityTokenServiceConfig(), endpoint))
+            : new AmazonSecurityTokenServiceClient();
 
     public static AmazonStepFunctionsClient StepFunctions(string endpoint = LocalStackFixture.Endpoint) =>
         ModoLocalStack

@@ -118,81 +118,131 @@ Total tests: 4
 
 ## Rodando na AWS real
 
-Este modo se conecta diretamente à sua conta AWS em vez de usar o LocalStack. Os recursos são criados e destruídos automaticamente durante a execução dos testes.
+Este modo conecta diretamente à sua conta AWS. Os recursos são criados no início dos testes e destruídos ao final — você não precisa fazer limpeza manual.
 
-### Pré-requisitos
+### Visão geral do que acontece
 
-1. **Conta AWS** com permissões para:
-   - `dynamodb:CreateTable`, `dynamodb:PutItem`, `dynamodb:Scan`, `dynamodb:DescribeTable`
-   - `sqs:CreateQueue`, `sqs:SendMessage`, `sqs:ReceiveMessage`, `sqs:GetQueueAttributes`
-   - `lambda:CreateFunction`, `lambda:InvokeFunction`, `lambda:CreateEventSourceMapping`, `lambda:GetFunction`, `lambda:GetEventSourceMapping`
-   - `scheduler:CreateSchedule`, `scheduler:GetSchedule`
-   - `iam:PassRole` (para o Scheduler invocar o Lambda)
+```
+dotnet test (AWS_TARGET=aws)
+    │
+    ├─ Fixture cria recursos na AWS:
+    │    tabela DynamoDB, 2 filas SQS, 3 Lambdas, 1 Scheduler
+    │
+    ├─ Testes rodam contra os recursos reais
+    │
+    └─ Fixture destrói os recursos ao finalizar
+         (tabela, filas e Lambdas são removidos automaticamente)
+```
 
-2. **IAM Role para o Scheduler** — o EventBridge Scheduler precisa de uma role com permissão `lambda:InvokeFunction`. Crie uma role chamada `agendador-ofertas-role` na sua conta com a seguinte trust policy:
+> **Nota sobre o Scheduler:** o EventBridge Scheduler não é destruído automaticamente pelo `DisposeScenarioAsync` (a API requer permissão adicional `scheduler:DeleteSchedule`). Após os testes, delete manualmente via console ou CLI: `aws scheduler delete-schedule --name agendador-ofertas`.
 
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [{
-       "Effect": "Allow",
-       "Principal": { "Service": "scheduler.amazonaws.com" },
-       "Action": "sts:AssumeRole"
-     }]
-   }
-   ```
+---
 
-   E attach a política `AWSLambdaRole` (ou uma política customizada com `lambda:InvokeFunction`).
+### Passo 1 — Instalar e configurar o AWS CLI
 
-3. **Credenciais AWS** configuradas. Escolha uma das opções:
+Verifique se o CLI está instalado:
 
-   **Opção A — Variáveis de ambiente** (mais simples):
-   ```bash
-   export AWS_ACCESS_KEY_ID=sua-access-key
-   export AWS_SECRET_ACCESS_KEY=sua-secret-key
-   export AWS_DEFAULT_REGION=us-east-1
-   ```
+```bash
+aws --version
+# aws-cli/2.x.x ...
+```
 
-   **Opção B — AWS CLI configurado** (se já tem o CLI instalado):
-   ```bash
-   aws configure
-   # preenche Access Key ID, Secret Access Key e região
-   ```
+Se não estiver, instale em [aws.amazon.com/cli](https://aws.amazon.com/cli/) e configure:
 
-### Executar
+```bash
+aws configure
+# AWS Access Key ID: <sua-access-key>
+# AWS Secret Access Key: <sua-secret-key>
+# Default region name: us-east-1
+# Default output format: json
+```
+
+Confirme que as credenciais funcionam:
+
+```bash
+aws sts get-caller-identity
+# {
+#   "Account": "123456789012",
+#   "Arn": "arn:aws:iam::123456789012:user/seu-usuario"
+# }
+```
+
+---
+
+### Passo 2 — Criar a IAM Role para o Scheduler
+
+O EventBridge Scheduler precisa de uma IAM Role para ter permissão de invocar a Lambda. Crie-a com dois comandos:
+
+```bash
+# 1. Criar a role com trust policy para o Scheduler
+aws iam create-role \
+  --role-name agendador-ofertas-role \
+  --assume-role-policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Principal": { "Service": "scheduler.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }]
+  }'
+
+# 2. Conceder permissão de invocar Lambdas
+aws iam attach-role-policy \
+  --role-name agendador-ofertas-role \
+  --policy-arn arn:aws:iam::aws:policy/AWSLambdaRole
+```
+
+Confirme que a role foi criada:
+
+```bash
+aws iam get-role --role-name agendador-ofertas-role \
+  --query 'Role.Arn' --output text
+# arn:aws:iam::123456789012:role/agendador-ofertas-role
+```
+
+> O account ID (`123456789012`) é detectado automaticamente pelo código — você não precisa informá-lo em nenhum lugar.
+
+---
+
+### Passo 3 — Executar os testes
 
 ```bash
 AWS_TARGET=aws dotnet test scenarios/16-Pipeline.Scheduler.Router/ \
   --logger "console;verbosity=detailed"
 ```
 
-Ou com todas as variáveis em uma linha:
+Acompanhe a saída: o Fixture imprime cada recurso criado (`>>>`) antes dos testes começarem.
+
+---
+
+### Passo 4 — Limpeza pós-testes (Scheduler)
+
+O Scheduler não é removido automaticamente. Delete após os testes:
 
 ```bash
-AWS_TARGET=aws \
-AWS_ACCESS_KEY_ID=sua-access-key \
-AWS_SECRET_ACCESS_KEY=sua-secret-key \
-AWS_DEFAULT_REGION=us-east-1 \
-dotnet test scenarios/16-Pipeline.Scheduler.Router/
+aws scheduler delete-schedule --name agendador-ofertas
 ```
 
-### O que muda no modo AWS real
+---
 
-| Aspecto | LocalStack | AWS real |
+### Comparativo LocalStack × AWS real
+
+| | LocalStack | AWS real |
 |---|---|---|
-| Onde os recursos são criados | Container Docker local | Conta AWS na região configurada |
-| Credenciais | `test` / `test` (hardcoded) | Suas credenciais IAM |
-| Endpoint | `http://localhost:4566` | Endpoints regionais da AWS |
-| Container Docker necessário | Sim | Não |
-| Custo | Gratuito | Cobranças normais da AWS¹ |
+| Onde os recursos são criados | Container Docker local | Sua conta AWS |
+| Credenciais | `test` / `test` | Suas credenciais IAM |
+| Docker necessário | Sim | Não |
+| IAM Role prévia necessária | Não (LocalStack aceita ARN fictício) | Sim (`agendador-ofertas-role`) |
+| Custo | Gratuito | Frações de centavo¹ |
+| Testes pulados no ARM64 | 2 (Lambdas) | Nenhum |
 
-> ¹ Os recursos criados pelos testes (tabela DynamoDB, filas SQS, funções Lambda, schedule EventBridge) são destruídos automaticamente ao final da execução. O custo de uma execução de testes é irrisório (frações de centavo).
+> ¹ Recursos são destruídos ao final. O custo de uma execução completa é irrisório.
 
-### Resultado esperado no modo AWS real
+### Resultado esperado
 
 ```
 Total tests: 4
-     Passed: 4       ← Todos os testes passam (sem skip de ARM64)
+     Passed: 4
 ```
 
 ---
