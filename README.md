@@ -102,7 +102,15 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 | 15  | StepFunctions.Orchestration | StepFunctions, Lambda, DynamoDB | 2      | State machine com Task + Choice branching |
 
 
-> Cenários Lambda (07–08, 11–14) são skipped automaticamente no macOS ARM64.  
+### Pipeline com agendamento e roteamento (16)
+
+
+| #   | Cenário                       | Serviços AWS                                    | Testes | O que demonstra                                                        |
+| --- | ----------------------------- | ----------------------------------------------- | ------ | ---------------------------------------------------------------------- |
+| 16  | Pipeline.Scheduler.Router     | EventBridge Scheduler, SQS, Lambda, DynamoDB    | 4      | Agendador → produção de ofertas → roteamento por regras no DynamoDB → fila dedicada por segmento. Suporte dual-modo LocalStack/AWS via `AWS_TARGET` |
+
+
+> Cenários Lambda (07–08, 11–14, 16) são skipped automaticamente no macOS ARM64.  
 > Cenário 15 requer LocalStack Pro.
 
 ## Estrutura do projeto
