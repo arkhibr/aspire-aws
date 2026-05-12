@@ -1,7 +1,5 @@
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Shared;
@@ -156,31 +154,21 @@ public class LocalStackFixture : IAsyncLifetime
         return stream!;
     }
 
-    private Task ImprimirUrlDashboardAsync()
+    private static Task ImprimirUrlDashboardAsync()
     {
-        try
-        {
-            var config = _app!.Services.GetRequiredService<IConfiguration>();
+        // ASPNETCORE_URLS só está definida no modo demo (demo.sh).
+        // Em modo teste, o dashboard não é relevante — a execução é rápida.
+        var aspnetUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+        if (string.IsNullOrEmpty(aspnetUrls))
+            return Task.CompletedTask;
 
-            var token     = config["ASPIRE__DASHBOARD__FRONTEND__BROWSERTOKEN"]
-                         ?? config["Dashboard:Frontend:BrowserToken"];
-            var endpoint  = config["ASPIRE__DASHBOARD__FRONTEND__ENDPOINTURLS"]
-                         ?? config["Dashboard:Frontend:EndpointUrls"]
-                         ?? "http://localhost:18888";
-            var url = string.IsNullOrEmpty(token)
-                ? endpoint
-                : $"{endpoint.TrimEnd('/')}/login?t={token}";
-
-            Console.WriteLine();
-            Console.WriteLine("┌──────────────────────────────────────────────────────────────────┐");
-            Console.WriteLine($"│  ASPIRE DASHBOARD  →  {url,-44}│");
-            Console.WriteLine("└──────────────────────────────────────────────────────────────────┘");
-            Console.WriteLine();
-        }
-        catch
-        {
-            // Dashboard não disponível neste ambiente — sem impacto nos testes
-        }
+        var baseUrl = aspnetUrls.Split(';')[0].TrimEnd('/');
+        Console.WriteLine();
+        Console.WriteLine("┌──────────────────────────────────────────────────────────────────┐");
+        Console.WriteLine($"│  ASPIRE DASHBOARD  →  {baseUrl,-44}│");
+        Console.WriteLine("│  (URL completa com token aparece no log do Aspire acima)         │");
+        Console.WriteLine("└──────────────────────────────────────────────────────────────────┘");
+        Console.WriteLine();
         return Task.CompletedTask;
     }
 
