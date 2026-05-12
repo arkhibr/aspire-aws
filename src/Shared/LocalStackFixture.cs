@@ -14,8 +14,27 @@ public class LocalStackFixture : IAsyncLifetime
 
     public const string Endpoint = "http://localhost:4566";
 
+    protected static bool ModoAws =>
+        string.Equals(Environment.GetEnvironmentVariable("AWS_TARGET"), "aws",
+            StringComparison.OrdinalIgnoreCase);
+
     public async Task InitializeAsync()
     {
+        if (ModoAws)
+        {
+            try
+            {
+                await InitializeScenarioAsync().ConfigureAwait(false);
+                _scenarioInitialized = true;
+            }
+            catch
+            {
+                await ReleaseResourcesAsync().ConfigureAwait(false);
+                throw;
+            }
+            return;
+        }
+
         _portLock = await AcquirePortLockAsync().ConfigureAwait(false);
 
         try
