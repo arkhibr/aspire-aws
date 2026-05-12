@@ -1,5 +1,7 @@
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Shared;
@@ -46,6 +48,7 @@ public class LocalStackFixture : IAsyncLifetime
             _app = await appHost.BuildAsync().ConfigureAwait(false);
             await _app.StartAsync().ConfigureAwait(false);
             await WaitForLocalStackAsync().ConfigureAwait(false);
+            await ImprimirUrlDashboardAsync().ConfigureAwait(false);
             await InitializeScenarioAsync().ConfigureAwait(false);
             _scenarioInitialized = true;
         }
@@ -151,6 +154,34 @@ public class LocalStackFixture : IAsyncLifetime
         .ConfigureAwait(false);
 
         return stream!;
+    }
+
+    private Task ImprimirUrlDashboardAsync()
+    {
+        try
+        {
+            var config = _app!.Services.GetRequiredService<IConfiguration>();
+
+            var token     = config["ASPIRE__DASHBOARD__FRONTEND__BROWSERTOKEN"]
+                         ?? config["Dashboard:Frontend:BrowserToken"];
+            var endpoint  = config["ASPIRE__DASHBOARD__FRONTEND__ENDPOINTURLS"]
+                         ?? config["Dashboard:Frontend:EndpointUrls"]
+                         ?? "http://localhost:18888";
+            var url = string.IsNullOrEmpty(token)
+                ? endpoint
+                : $"{endpoint.TrimEnd('/')}/login?t={token}";
+
+            Console.WriteLine();
+            Console.WriteLine("┌──────────────────────────────────────────────────────────────────┐");
+            Console.WriteLine($"│  ASPIRE DASHBOARD  →  {url,-44}│");
+            Console.WriteLine("└──────────────────────────────────────────────────────────────────┘");
+            Console.WriteLine();
+        }
+        catch
+        {
+            // Dashboard não disponível neste ambiente — sem impacto nos testes
+        }
+        return Task.CompletedTask;
     }
 
     private static async Task WaitForLocalStackAsync()

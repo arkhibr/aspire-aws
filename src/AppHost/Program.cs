@@ -4,8 +4,7 @@ var lambdaCallbackHost =
 
 var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions
 {
-    Args = args,
-    DisableDashboard = true
+    Args = args
 });
 
 var alvoAws = Environment.GetEnvironmentVariable("AWS_TARGET") ?? "localstack";
