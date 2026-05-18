@@ -1,6 +1,6 @@
 # aspire-aws
 
-Catálogo de 15 cenários progressivos para testar integrações AWS localmente, usando **.NET Aspire** como orquestrador, **LocalStack** como simulador e **xUnit** como framework de testes.
+Catálogo de 16 cenários progressivos para testar integrações AWS localmente, usando **.NET Aspire** como orquestrador, **LocalStack** como simulador e **xUnit** como framework de testes.
 
 Nenhuma conta AWS necessária. Tudo roda em Docker.
 
@@ -14,6 +14,7 @@ Nenhuma conta AWS necessária. Tudo roda em Docker.
   - [Lambda triggers (07–08, 11, 14)](#lambda-triggers-0708-11-14)
   - [Pipelines multi-serviço (12–13)](#pipelines-multi-serviço-1213)
   - [Orquestração (15)](#orquestração-15)
+  - [Pipeline com agendamento e roteamento (16)](#pipeline-com-agendamento-e-roteamento-16)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Como funciona](#como-funciona)
 - [Limitações conhecidas](#limitações-conhecidas)
@@ -137,7 +138,8 @@ aspire-aws/
 │   │   └── S3BasicTests.cs
 │   ├── 02-SQS.Basic/
 │   │   └── ...
-│   └── 15-StepFunctions.Orchestration/
+│   ├── 15-StepFunctions.Orchestration/
+│   └── 16-Pipeline.Scheduler.Router/
 └── docs/
     └── architecture.md    Documento detalhado de arquitetura e conceitos
 ```
@@ -173,7 +175,7 @@ dotnet test scenarios/XX-Foo/
 
 | Limitação                              | Cenários afetados           | Alternativa                         |
 | -------------------------------------- | --------------------------- | ----------------------------------- |
-| Lambda no LocalStack 3.8 + macOS ARM64 | 07, 08, 11, 12, 13, 14      | Rodar em Linux/CI ou LocalStack Pro |
+| Lambda no LocalStack 3.8 + macOS ARM64 | 07, 08, 11, 12, 13, 14, 16  | Rodar em Linux/CI ou LocalStack Pro |
 | Step Functions na edição Community     | 15                          | LocalStack Pro                      |
 | Porta fixa 4566                        | Todos (execução sequencial) | —                                   |
 

@@ -3,6 +3,12 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+# AI assistant config (local only)
+CLAUDE.md
+AGENTS.md
+.superpowers/
+.claude/
+
 # dotenv files
 .env
 
