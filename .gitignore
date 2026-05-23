@@ -9,6 +9,9 @@ AGENTS.md
 .superpowers/
 .claude/
 
+# Visual Studio / Rider NuGet restore cache
+*.lscache
+
 # dotenv files
 .env
 
