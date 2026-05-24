@@ -54,6 +54,10 @@ def main():
             for msg in response.get("Messages", []):
                 pedido = json.loads(msg["Body"])
                 try:
+                    # Reconecta se a conexão PostgreSQL estiver morta
+                    if conn.closed:
+                        print("[WORKER] Conexão PostgreSQL fechada — reconectando...")
+                        conn = connect_with_retry(database_url)
                     with conn.cursor() as cur:
                         cur.execute(
                             """
@@ -70,6 +74,16 @@ def main():
                         ReceiptHandle=msg["ReceiptHandle"],
                     )
                     print(f"[WORKER] Pedido {pedido['id']} processado → cliente={pedido['cliente']}")
+                except psycopg2.OperationalError as db_err:
+                    print(f"[WORKER] Erro de conexão PostgreSQL — reconectando: {db_err}")
+                    try:
+                        conn.rollback()
+                    except Exception:
+                        pass
+                    try:
+                        conn = connect_with_retry(database_url, retries=5, delay=1)
+                    except Exception:
+                        pass
                 except psycopg2.Error as db_err:
                     print(f"[WORKER] Erro PostgreSQL ao processar pedido: {db_err}")
                     try:

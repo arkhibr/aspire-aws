@@ -22,6 +22,10 @@ public class Fixture : LocalStackFixture
     public string UrlFilaPedidos { get; private set; } = null!;
     public string ConnectionString => LocalStackFixture.PostgresConnectionString;
 
+    // ECS control plane (CreateCluster, RegisterTaskDefinition) é Pro feature.
+    // Quando não disponível, testes de plano de controle são pulados mas integração SQS/PG funciona.
+    public bool EcsApiDisponivel { get; private set; }
+
     protected override async Task InitializeScenarioAsync()
     {
         ECS = AwsClientFactory.ECS();
@@ -49,34 +53,43 @@ public class Fixture : LocalStackFixture
         // 3. Cria fila SQS que o worker vai consumir
         UrlFilaPedidos = (await SQS.CreateQueueAsync(NomeFilaPedidos)).QueueUrl;
 
-        // 4. Cria cluster ECS no LocalStack
-        var cluster = await ECS.CreateClusterAsync(new CreateClusterRequest
+        // 4. Tenta criar cluster ECS — pode falhar no LocalStack Community (Pro feature)
+        try
         {
-            ClusterName = NomeCluster
-        });
-        ClusterArn = cluster.Cluster.ClusterArn;
+            var cluster = await ECS.CreateClusterAsync(new CreateClusterRequest
+            {
+                ClusterName = NomeCluster
+            });
+            ClusterArn = cluster.Cluster.ClusterArn;
 
-        // 5. Registra task definition com env vars do worker
-        var taskDef = await ECS.RegisterTaskDefinitionAsync(new RegisterTaskDefinitionRequest
+            // 5. Registra task definition com env vars do worker
+            var taskDef = await ECS.RegisterTaskDefinitionAsync(new RegisterTaskDefinitionRequest
+            {
+                Family = FamiliaTask,
+                ContainerDefinitions =
+                [
+                    new ContainerDefinition
+                    {
+                        Name      = "worker",
+                        Image     = "ecs-worker:latest",
+                        Essential = true,
+                        Environment =
+                        [
+                            new Amazon.ECS.Model.KeyValuePair { Name = "FILA_PEDIDOS_URL",  Value = UrlFilaPedidos },
+                            new Amazon.ECS.Model.KeyValuePair { Name = "DATABASE_URL",       Value = ConnectionString },
+                            new Amazon.ECS.Model.KeyValuePair { Name = "AWS_ENDPOINT_URL",   Value = Endpoint }
+                        ]
+                    }
+                ]
+            });
+            TaskDefArn = taskDef.TaskDefinition.TaskDefinitionArn;
+            EcsApiDisponivel = true;
+        }
+        catch (AmazonECSException ex) when (ex.Message.Contains("not yet implemented") || ex.Message.Contains("pro feature"))
         {
-            Family = FamiliaTask,
-            ContainerDefinitions =
-            [
-                new ContainerDefinition
-                {
-                    Name      = "worker",
-                    Image     = "ecs-worker:latest",
-                    Essential = true,
-                    Environment =
-                    [
-                        new Amazon.ECS.Model.KeyValuePair { Name = "FILA_PEDIDOS_URL",  Value = UrlFilaPedidos },
-                        new Amazon.ECS.Model.KeyValuePair { Name = "DATABASE_URL",       Value = ConnectionString },
-                        new Amazon.ECS.Model.KeyValuePair { Name = "AWS_ENDPOINT_URL",   Value = Endpoint }
-                    ]
-                }
-            ]
-        });
-        TaskDefArn = taskDef.TaskDefinition.TaskDefinitionArn;
+            // LocalStack Community não suporta ECS control plane — integração SQS/PG ainda funciona
+            EcsApiDisponivel = false;
+        }
     }
 
     private async Task WaitForWorkerAsync()
@@ -98,8 +111,8 @@ public class Fixture : LocalStackFixture
             {
                 return false;
             }
-        }, timeout: TimeSpan.FromSeconds(60), interval: TimeSpan.FromSeconds(1),
-        failureMessage: "Worker ECS não inicializou — tabela 'pedidos' não criada em 60s.");
+        }, timeout: TimeSpan.FromSeconds(120), interval: TimeSpan.FromSeconds(1),
+        failureMessage: "Worker ECS não inicializou — tabela 'pedidos' não criada em 120s.");
     }
 
     protected override async Task DisposeScenarioAsync()
@@ -120,11 +133,14 @@ public class Fixture : LocalStackFixture
         }
         catch { }
 
-        try
+        if (EcsApiDisponivel)
         {
-            await ECS.DeleteClusterAsync(new DeleteClusterRequest { Cluster = NomeCluster });
+            try
+            {
+                await ECS.DeleteClusterAsync(new DeleteClusterRequest { Cluster = NomeCluster });
+            }
+            catch { }
         }
-        catch { }
 
         ECS?.Dispose();
         SQS?.Dispose();
