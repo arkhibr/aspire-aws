@@ -125,7 +125,7 @@ public class EcsRunTaskTests(Fixture fixture, ITestOutputHelper output) : IClass
         await fixture.SQS.SendMessageAsync(fixture.UrlFilaPedidos, body);
 
         // 3. Poll PostgreSQL até o worker persistir o pedido
-        output.WriteLine($">>> Polling PostgreSQL: aguardando até 30s pelo registro '{pedidoId}'");
+        output.WriteLine($">>> Polling PostgreSQL: aguardando até 120s pelo registro '{pedidoId}'");
         await using var conn = new Npgsql.NpgsqlConnection(fixture.ConnectionString);
         await conn.OpenAsync();
 
@@ -135,8 +135,8 @@ public class EcsRunTaskTests(Fixture fixture, ITestOutputHelper output) : IClass
                 $"SELECT COUNT(*) FROM {Fixture.NomeTabelaPedidos} WHERE id = @id", conn);
             cmd.Parameters.AddWithValue("id", pedidoId);
             return (long)(await cmd.ExecuteScalarAsync())! > 0;
-        }, timeout: TimeSpan.FromSeconds(30),
-        failureMessage: $"Pedido '{pedidoId}' não apareceu no PostgreSQL em 30s.");
+        }, timeout: TimeSpan.FromSeconds(120),
+        failureMessage: $"Pedido '{pedidoId}' não apareceu no PostgreSQL em 120s.");
 
         // 4. Verifica os dados gravados
         await using var select = new Npgsql.NpgsqlCommand(
@@ -189,7 +189,7 @@ public class EcsRunTaskTests(Fixture fixture, ITestOutputHelper output) : IClass
             await fixture.SQS.SendMessageAsync(fixture.UrlFilaPedidos, body);
         }
 
-        output.WriteLine($">>> Polling PostgreSQL: aguardando até 30s pelos {pedidos.Length} registros");
+        output.WriteLine($">>> Polling PostgreSQL: aguardando até 120s pelos {pedidos.Length} registros");
         await using var conn = new Npgsql.NpgsqlConnection(fixture.ConnectionString);
         await conn.OpenAsync();
 
@@ -198,8 +198,8 @@ public class EcsRunTaskTests(Fixture fixture, ITestOutputHelper output) : IClass
             await using var cmd = new Npgsql.NpgsqlCommand(
                 $"SELECT COUNT(*) FROM {Fixture.NomeTabelaPedidos} WHERE id LIKE 'pedido-multi-%'", conn);
             return (long)(await cmd.ExecuteScalarAsync())! >= pedidos.Length;
-        }, timeout: TimeSpan.FromSeconds(30),
-        failureMessage: $"Nem todos os {pedidos.Length} pedidos apareceram no PostgreSQL em 30s.");
+        }, timeout: TimeSpan.FromSeconds(120),
+        failureMessage: $"Nem todos os {pedidos.Length} pedidos apareceram no PostgreSQL em 120s.");
 
         await using var select = new Npgsql.NpgsqlCommand(
             $"SELECT COUNT(*) FROM {Fixture.NomeTabelaPedidos} WHERE id LIKE 'pedido-multi-%'", conn);

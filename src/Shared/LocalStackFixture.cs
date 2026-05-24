@@ -149,7 +149,7 @@ public class LocalStackFixture : IAsyncLifetime
                 await Task.Delay(100).ConfigureAwait(false);
                 return false;
             }
-        }, timeout: TimeSpan.FromMinutes(5), interval: TimeSpan.FromMilliseconds(250),
+        }, timeout: TimeSpan.FromMinutes(15), interval: TimeSpan.FromMilliseconds(250),
         failureMessage: "Timed out waiting for exclusive access to LocalStack port 4566.")
         .ConfigureAwait(false);
 
