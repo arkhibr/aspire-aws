@@ -13,6 +13,8 @@ public class LocalStackFixture : IAsyncLifetime
     private bool _scenarioInitialized;
 
     public const string Endpoint = "http://localhost:4566";
+    public const string PostgresConnectionString =
+        "Host=localhost;Port=5433;Database=testdb;Username=test;Password=test";
 
     protected static bool ModoAws =>
         string.Equals(Environment.GetEnvironmentVariable("AWS_TARGET"), "aws",
