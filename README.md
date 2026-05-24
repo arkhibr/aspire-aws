@@ -58,12 +58,12 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário              | Serviços AWS   | Testes | O que demonstra                                |
 | --- | -------------------- | -------------- | ------ | ---------------------------------------------- |
-| 01  | S3.Basic             | S3             | 5      | CRUD de buckets/objetos, presigned URLs        |
-| 02  | SQS.Basic            | SQS            | 4      | Send/receive, delete, dead-letter queue        |
-| 03  | DynamoDB.Basic       | DynamoDB       | 4      | Put/get, scan, query, delete                   |
-| 04  | SNS.Basic            | SNS, SQS       | 3      | Criar tópico, publicar com subscriber SQS      |
-| 05  | SSM.Basic            | SSM            | 3      | Parâmetros String/SecureString, busca por path |
-| 06  | SecretsManager.Basic | SecretsManager | 3      | Criar, atualizar, deletar segredos             |
+| 01  | [S3.Basic](docs/roteiros/01-s3-basic.md)             | S3             | 5      | CRUD de buckets/objetos, presigned URLs        |
+| 02  | [SQS.Basic](docs/roteiros/02-sqs-basic.md)           | SQS            | 4      | Send/receive, delete, dead-letter queue        |
+| 03  | [DynamoDB.Basic](docs/roteiros/03-dynamodb-basic.md) | DynamoDB       | 4      | Put/get, scan, query, delete                   |
+| 04  | [SNS.Basic](docs/roteiros/04-sns-basic.md)           | SNS, SQS       | 3      | Criar tópico, publicar com subscriber SQS      |
+| 05  | [SSM.Basic](docs/roteiros/05-ssm-basic.md)           | SSM            | 3      | Parâmetros String/SecureString, busca por path |
+| 06  | [SecretsManager.Basic](docs/roteiros/06-secrets-manager-basic.md) | SecretsManager | 3 | Criar, atualizar, deletar segredos        |
 
 
 ### Integração entre serviços (09–10) — sem Lambda
@@ -71,8 +71,8 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário             | Serviços AWS | Testes | O que demonstra                              |
 | --- | ------------------- | ------------ | ------ | -------------------------------------------- |
-| 09  | SNS.SQS.Fanout      | SNS, SQS     | 1      | Fan-out: uma mensagem SNS entregue a N filas |
-| 10  | S3.SQS.Notification | S3, SQS      | 1      | Upload no S3 gera notificação na fila SQS    |
+| 09  | [SNS.SQS.Fanout](docs/roteiros/09-sns-sqs-fanout.md)           | SNS, SQS | 1 | Fan-out: uma mensagem SNS entregue a N filas |
+| 10  | [S3.SQS.Notification](docs/roteiros/10-s3-sqs-notification.md) | S3, SQS  | 1 | Upload no S3 gera notificação na fila SQS    |
 
 
 ### Lambda triggers (07–08, 11, 14)
@@ -80,10 +80,10 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário             | Fluxo                           | Testes | O que demonstra                                          |
 | --- | ------------------- | ------------------------------- | ------ | -------------------------------------------------------- |
-| 07  | S3.Lambda.Trigger   | S3 → Lambda → DynamoDB          | 1      | Upload dispara Lambda que persiste no DynamoDB           |
-| 08  | SQS.Lambda.Consumer | SQS → Lambda → DynamoDB         | 1      | Mensagem na fila dispara Lambda via event source mapping |
-| 11  | DynamoDB.Lambda     | invoke → Lambda → DynamoDB      | 1      | Invocação direta de Lambda com persistência              |
-| 14  | EventBridge.Lambda  | EventBridge → Lambda → DynamoDB | 2      | Regra com filtro de source + teste negativo              |
+| 07  | [S3.Lambda.Trigger](docs/roteiros/07-s3-lambda-trigger.md)     | S3 → Lambda → DynamoDB          | 1 | Upload dispara Lambda que persiste no DynamoDB           |
+| 08  | [SQS.Lambda.Consumer](docs/roteiros/08-sqs-lambda-consumer.md) | SQS → Lambda → DynamoDB         | 1 | Mensagem na fila dispara Lambda via event source mapping |
+| 11  | [DynamoDB.Lambda](docs/roteiros/11-dynamodb-lambda.md)         | invoke → Lambda → DynamoDB      | 1 | Invocação direta de Lambda com persistência              |
+| 14  | [EventBridge.Lambda](docs/roteiros/14-eventbridge-lambda.md)   | EventBridge → Lambda → DynamoDB | 2 | Regra com filtro de source + teste negativo              |
 
 
 ### Pipelines multi-serviço (12–13)
@@ -91,8 +91,8 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário                         | Fluxo                        | Testes | O que demonstra                                |
 | --- | ------------------------------- | ---------------------------- | ------ | ---------------------------------------------- |
-| 12  | Pipeline.S3.SQS.Lambda.DynamoDB | S3 → SQS → Lambda → DynamoDB | 1      | Pipeline completo de processamento de arquivos |
-| 13  | Pipeline.SNS.SQS.Lambda.S3      | SNS → SQS → Lambda → S3      | 1      | Pipeline de fan-out com resultado salvo no S3  |
+| 12  | [Pipeline.S3.SQS.Lambda.DynamoDB](docs/roteiros/12-pipeline-s3-sqs-lambda-dynamodb.md) | S3 → SQS → Lambda → DynamoDB | 1 | Pipeline completo de processamento de arquivos |
+| 13  | [Pipeline.SNS.SQS.Lambda.S3](docs/roteiros/13-pipeline-sns-sqs-lambda-s3.md)           | SNS → SQS → Lambda → S3      | 1 | Pipeline de fan-out com resultado salvo no S3  |
 
 
 ### Orquestração (15)
@@ -100,7 +100,7 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário                     | Serviços AWS                    | Testes | O que demonstra                           |
 | --- | --------------------------- | ------------------------------- | ------ | ----------------------------------------- |
-| 15  | StepFunctions.Orchestration | StepFunctions, Lambda, DynamoDB | 2      | State machine com Task + Choice branching |
+| 15  | [StepFunctions.Orchestration](docs/roteiros/15-stepfunctions-orchestration.md) | StepFunctions, Lambda, DynamoDB | 2 | State machine com Task + Choice branching |
 
 
 ### Pipeline com agendamento e roteamento (16)
@@ -108,7 +108,7 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário                       | Serviços AWS                                    | Testes | O que demonstra                                                        |
 | --- | ----------------------------- | ----------------------------------------------- | ------ | ---------------------------------------------------------------------- |
-| 16  | Pipeline.Scheduler.Router     | EventBridge Scheduler, SQS, Lambda, DynamoDB    | 4      | Agendador → produção de ofertas → roteamento por regras no DynamoDB → fila dedicada por segmento. Suporte dual-modo LocalStack/AWS via `AWS_TARGET` |
+| 16  | [Pipeline.Scheduler.Router](scenarios/16-Pipeline.Scheduler.Router/README.md) | EventBridge Scheduler, SQS, Lambda, DynamoDB | 4 | Agendador → produção de ofertas → roteamento por regras no DynamoDB → fila dedicada por segmento. Suporte dual-modo LocalStack/AWS via `AWS_TARGET` |
 
 
 ### RDS e PostgreSQL (17)
