@@ -20,7 +20,7 @@ if (!string.Equals(alvoAws, "aws", StringComparison.OrdinalIgnoreCase))
         .WithHttpEndpoint(port: 4566, targetPort: 4566, name: "gateway", isProxied: false);
 
     builder
-        .AddContainer("postgres-rds", "postgres", "16")
+        .AddContainer("postgres-rds", "postgres", "16.9")
         .WithEnvironment("POSTGRES_USER", "test")
         .WithEnvironment("POSTGRES_PASSWORD", "test")
         .WithEnvironment("POSTGRES_DB", "testdb")

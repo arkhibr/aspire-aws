@@ -12,6 +12,7 @@ public class Fixture : LocalStackFixture
 
     public AmazonRDSClient RDS { get; private set; } = null!;
     public string ConnectionString => LocalStackFixture.PostgresConnectionString;
+    public bool RdsApiAvailable { get; private set; }
 
     protected override async Task InitializeScenarioAsync()
     {
@@ -33,29 +34,41 @@ public class Fixture : LocalStackFixture
         }, timeout: TimeSpan.FromSeconds(60), interval: TimeSpan.FromSeconds(1),
         failureMessage: "PostgreSQL não ficou disponível em 60s.");
 
-        // 2. Cria instância RDS no LocalStack (plano de controle AWS)
-        await RDS.CreateDBInstanceAsync(new CreateDBInstanceRequest
+        // 2. Tenta criar instância RDS no LocalStack (plano de controle AWS).
+        //    LocalStack Community 3.8 não suporta a API RDS — apenas a edição Pro.
+        //    A tentativa é registrada mas não bloqueia a fixture.
+        try
         {
-            DBInstanceIdentifier = NomeInstancia,
-            DBInstanceClass      = "db.t3.micro",
-            Engine               = "postgres",
-            MasterUsername       = "test",
-            MasterUserPassword   = "test",
-            AllocatedStorage     = 20,
-            DBName               = "testdb"
-        });
-
-        // 3. Aguarda status "available" (LocalStack transiciona rapidamente)
-        await PollingHelper.WaitUntilAsync(async () =>
-        {
-            var r = await RDS.DescribeDBInstancesAsync(new DescribeDBInstancesRequest
+            await RDS.CreateDBInstanceAsync(new CreateDBInstanceRequest
             {
-                DBInstanceIdentifier = NomeInstancia
+                DBInstanceIdentifier = NomeInstancia,
+                DBInstanceClass      = "db.t3.micro",
+                Engine               = "postgres",
+                MasterUsername       = "test",
+                MasterUserPassword   = "test",
+                AllocatedStorage     = 20,
+                DBName               = "testdb"
             });
-            return r.DBInstances.Count > 0 &&
-                   r.DBInstances[0].DBInstanceStatus == "available";
-        }, timeout: TimeSpan.FromSeconds(30),
-        failureMessage: $"Instância RDS '{NomeInstancia}' não ficou 'available' em 30s.");
+
+            // 3. Aguarda status "available" (LocalStack Pro transiciona rapidamente)
+            await PollingHelper.WaitUntilAsync(async () =>
+            {
+                var r = await RDS.DescribeDBInstancesAsync(new DescribeDBInstancesRequest
+                {
+                    DBInstanceIdentifier = NomeInstancia
+                });
+                return r.DBInstances.Count > 0 &&
+                       r.DBInstances[0].DBInstanceStatus == "available";
+            }, timeout: TimeSpan.FromSeconds(30),
+            failureMessage: $"Instância RDS '{NomeInstancia}' não ficou 'available' em 30s.");
+
+            RdsApiAvailable = true;
+        }
+        catch (Amazon.RDS.AmazonRDSException)
+        {
+            // API RDS não disponível no LocalStack Community — testes de plano de controle serão pulados.
+            RdsApiAvailable = false;
+        }
 
         // 4. Cria schema no PostgreSQL real
         await using var setup = new NpgsqlConnection(ConnectionString);
