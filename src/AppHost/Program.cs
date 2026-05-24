@@ -25,6 +25,13 @@ if (!string.Equals(alvoAws, "aws", StringComparison.OrdinalIgnoreCase))
         .WithEnvironment("POSTGRES_PASSWORD", "test")
         .WithEnvironment("POSTGRES_DB", "testdb")
         .WithHttpEndpoint(port: 5433, targetPort: 5432, name: "tcp", isProxied: false);
+
+    builder
+        .AddDockerfile("ecs-worker", "../tasks/pedido_processor")
+        .WithEnvironment("AWS_ENDPOINT_URL", "http://host.docker.internal:4566")
+        .WithEnvironment("DATABASE_URL", "postgresql://test:test@host.docker.internal:5433/testdb")
+        .WithEnvironment("FILA_PEDIDOS_URL",
+            "http://host.docker.internal:4566/000000000000/fila-pedidos");
 }
 
 builder.Build().Run();
