@@ -1,4 +1,5 @@
 using Amazon.RDS.Model;
+using Shared;
 using Xunit.Abstractions;
 
 namespace Scenarios.RDS.Basic;
@@ -7,7 +8,7 @@ public class RdsBasicTests(Fixture fixture, ITestOutputHelper output) : IClassFi
 {
     // ── Plano de controle AWS ────────────────────────────────────────────────
 
-    [Fact]
+    [Fact(Skip = EnvironmentLimitations.LocalStackRdsApiReason)]
     public async Task CreateDBInstance_ShouldReturnInstanceIdentifier()
     {
         output.WriteLine($">>> RDS.DescribeDBInstances: verificando instância '{Fixture.NomeInstancia}'");
@@ -26,7 +27,7 @@ public class RdsBasicTests(Fixture fixture, ITestOutputHelper output) : IClassFi
         output.WriteLine("    Instância identificada corretamente — API de provisionamento funcional");
     }
 
-    [Fact]
+    [Fact(Skip = EnvironmentLimitations.LocalStackRdsApiReason)]
     public async Task DescribeDBInstances_ShouldShowAvailableStatus()
     {
         output.WriteLine($">>> RDS.DescribeDBInstances: verificando status da instância '{Fixture.NomeInstancia}'");
@@ -44,7 +45,7 @@ public class RdsBasicTests(Fixture fixture, ITestOutputHelper output) : IClassFi
         output.WriteLine("    Status 'available' confirmado — instância pronta");
     }
 
-    [Fact]
+    [Fact(Skip = EnvironmentLimitations.LocalStackRdsApiReason)]
     public async Task ModifyDBInstance_ShouldUpdateAllocatedStorage()
     {
         output.WriteLine($">>> RDS.ModifyDBInstance: alterando AllocatedStorage de 20 → 30 GB");
