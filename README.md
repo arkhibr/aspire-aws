@@ -116,7 +116,7 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário   | Serviços AWS       | Testes | O que demonstra                                                                               |
 | --- | --------- | ------------------ | ------ | --------------------------------------------------------------------------------------------- |
-| 17  | RDS.Basic | RDS, PostgreSQL    | 8      | API de controle RDS (Pro): criar/descrever/modificar instância. Plano de dados: CRUD + transação via Npgsql direto no PostgreSQL |
+| 17  | [RDS.Basic](docs/roteiros/17-rds-basic.md) | RDS, PostgreSQL | 8 | API de controle RDS (Pro): criar/descrever/modificar instância. Plano de dados: CRUD + transação via Npgsql direto no PostgreSQL |
 
 
 > 3 testes de plano de controle RDS são skipped na edição Community (requerem LocalStack Pro). 5 testes de plano de dados passam sempre.
@@ -126,7 +126,7 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 
 | #   | Cenário        | Serviços AWS              | Testes | O que demonstra                                                                                                      |
 | --- | -------------- | ------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| 18  | ECS.RunTask    | ECS, SQS, PostgreSQL      | 5      | API de controle ECS (Pro): criar cluster, registrar task definition, RunTask. Integração: worker Docker real consome SQS e persiste pedidos no PostgreSQL |
+| 18  | [ECS.RunTask](docs/roteiros/18-ecs-runtask.md) | ECS, SQS, PostgreSQL | 5 | API de controle ECS (Pro): criar cluster, registrar task definition, RunTask. Integração: worker Docker real consome SQS e persiste pedidos no PostgreSQL |
 
 
 > 3 testes de plano de controle ECS são skipped na edição Community (requerem LocalStack Pro). 2 testes de integração (worker real) passam sempre.
