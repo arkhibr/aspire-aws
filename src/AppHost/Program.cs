@@ -29,6 +29,9 @@ if (!string.Equals(alvoAws, "aws", StringComparison.OrdinalIgnoreCase))
     builder
         .AddDockerfile("ecs-worker", "../tasks/pedido_processor")
         .WithEnvironment("AWS_ENDPOINT_URL", "http://host.docker.internal:4566")
+        .WithEnvironment("AWS_DEFAULT_REGION", "us-east-1")
+        .WithEnvironment("AWS_ACCESS_KEY_ID", "test")
+        .WithEnvironment("AWS_SECRET_ACCESS_KEY", "test")
         .WithEnvironment("DATABASE_URL", "postgresql://test:test@host.docker.internal:5433/testdb")
         .WithEnvironment("FILA_PEDIDOS_URL",
             "http://host.docker.internal:4566/000000000000/fila-pedidos");
