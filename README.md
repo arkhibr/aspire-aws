@@ -111,8 +111,28 @@ O LocalStack sobe e desce automaticamente via Aspire — não é necessário `do
 | 16  | Pipeline.Scheduler.Router     | EventBridge Scheduler, SQS, Lambda, DynamoDB    | 4      | Agendador → produção de ofertas → roteamento por regras no DynamoDB → fila dedicada por segmento. Suporte dual-modo LocalStack/AWS via `AWS_TARGET` |
 
 
+### RDS e PostgreSQL (17)
+
+
+| #   | Cenário   | Serviços AWS       | Testes | O que demonstra                                                                               |
+| --- | --------- | ------------------ | ------ | --------------------------------------------------------------------------------------------- |
+| 17  | RDS.Basic | RDS, PostgreSQL    | 8      | API de controle RDS (Pro): criar/descrever/modificar instância. Plano de dados: CRUD + transação via Npgsql direto no PostgreSQL |
+
+
+> 3 testes de plano de controle RDS são skipped na edição Community (requerem LocalStack Pro). 5 testes de plano de dados passam sempre.
+
+### ECS + Worker Docker (18)
+
+
+| #   | Cenário        | Serviços AWS              | Testes | O que demonstra                                                                                                      |
+| --- | -------------- | ------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------- |
+| 18  | ECS.RunTask    | ECS, SQS, PostgreSQL      | 5      | API de controle ECS (Pro): criar cluster, registrar task definition, RunTask. Integração: worker Docker real consome SQS e persiste pedidos no PostgreSQL |
+
+
+> 3 testes de plano de controle ECS são skipped na edição Community (requerem LocalStack Pro). 2 testes de integração (worker real) passam sempre.
+
 > Cenários Lambda (07–08, 11–14, 16) são skipped automaticamente no macOS ARM64.  
-> Cenário 15 requer LocalStack Pro.
+> Cenários 15, e testes de plano de controle de 17 e 18, requerem LocalStack Pro.
 
 ## Estrutura do projeto
 
@@ -125,13 +145,18 @@ aspire-aws/
 │   │   ├── AwsClientFactory.cs     Factory de clientes AWS → localhost:4566
 │   │   ├── LambdaDeployer.cs       Zip + deploy de Python Lambdas
 │   │   └── PollingHelper.cs        WaitUntilAsync / AssertNeverAsync
-│   └── lambdas/           Handlers Python (um diretório por função)
-│       ├── s3_processor/
-│       ├── sqs_consumer/
-│       ├── dynamodb_writer/
-│       ├── fanout_processor/
-│       ├── eventbridge_handler/
-│       └── stepfunctions_task/
+│   ├── lambdas/           Handlers Python invocados via Lambda (cenários 07–16)
+│   │   ├── s3_processor/
+│   │   ├── sqs_consumer/
+│   │   ├── dynamodb_writer/
+│   │   ├── fanout_processor/
+│   │   ├── eventbridge_handler/
+│   │   ├── stepfunctions_task/
+│   │   ├── produtor_de_ofertas/
+│   │   ├── roteador_de_ofertas/
+│   │   └── eco_consignado/
+│   └── tasks/             Workers de longa duração em container Docker (cenário 18)
+│       └── pedido_processor/   Worker Python: consome SQS e persiste no PostgreSQL
 ├── scenarios/             Um projeto xUnit independente por cenário
 │   ├── 01-S3.Basic/
 │   │   ├── Fixture.cs     Setup de recursos AWS para este cenário
@@ -141,8 +166,17 @@ aspire-aws/
 │   ├── 15-StepFunctions.Orchestration/
 │   └── 16-Pipeline.Scheduler.Router/
 └── docs/
-    └── architecture.md    Documento detalhado de arquitetura e conceitos
+    ├── architecture/      Índice arquitetural, diagramas C4 e ADRs
+    ├── architecture.md    Documento detalhado de arquitetura e conceitos
+    └── roteiros/          Roteiros didáticos por cenário
 ```
+
+| Módulo | Documentação |
+|--------|--------------|
+| `src/AppHost/` | [README](src/AppHost/README.md) — configura e inicia os containers LocalStack e PostgreSQL via Aspire |
+| `src/Shared/` | [README](src/Shared/README.md) — fixtures, factory de clientes AWS, polling e deploy de Lambdas |
+| `src/lambdas/` | [README](src/lambdas/README.md) — handlers Python por cenário Lambda (cenários 07–16) |
+| `src/tasks/` | Worker de longa duração em container Docker; usado pelo cenário 18 (ECS.RunTask) |
 
 ## Como funciona
 
@@ -173,13 +207,17 @@ dotnet test scenarios/XX-Foo/
 ## Limitações conhecidas
 
 
-| Limitação                              | Cenários afetados           | Alternativa                         |
-| -------------------------------------- | --------------------------- | ----------------------------------- |
-| Lambda no LocalStack 3.8 + macOS ARM64 | 07, 08, 11, 12, 13, 14, 16  | Rodar em Linux/CI ou LocalStack Pro |
-| Step Functions na edição Community     | 15                          | LocalStack Pro                      |
-| Porta fixa 4566                        | Todos (execução sequencial) | —                                   |
+| Limitação                                        | Cenários afetados               | Alternativa                         |
+| ------------------------------------------------ | ------------------------------- | ----------------------------------- |
+| Lambda no LocalStack 3.8 + macOS ARM64           | 07, 08, 11, 12, 13, 14, 16      | Rodar em Linux/CI ou LocalStack Pro |
+| Step Functions na edição Community               | 15                              | LocalStack Pro                      |
+| RDS control plane API na edição Community        | 17 (3 testes de 8)              | LocalStack Pro                      |
+| ECS control plane API na edição Community        | 18 (3 testes de 5)              | LocalStack Pro                      |
+| Porta fixa 4566                                  | Todos (execução sequencial)     | —                                   |
 
 
 ## Documentação adicional
 
+- [docs/architecture/README.md](docs/architecture/README.md) — Índice arquitetural: diagramas C4, mapa de módulos e ADRs
+- [docs/architecture/adrs/](docs/architecture/adrs/) — Decisões arquiteturais (ADR-001 a ADR-006)
 - [docs/architecture.md](docs/architecture.md) — Arquitetura detalhada, conceitos AWS, padrões de implementação
