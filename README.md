@@ -221,3 +221,4 @@ dotnet test scenarios/XX-Foo/
 - [docs/architecture/README.md](docs/architecture/README.md) — Índice arquitetural: diagramas C4, mapa de módulos e ADRs
 - [docs/architecture/adrs/](docs/architecture/adrs/) — Decisões arquiteturais (ADR-001 a ADR-006)
 - [docs/architecture.md](docs/architecture.md) — Arquitetura detalhada, conceitos AWS, padrões de implementação
+- [docs/docker-engine-wsl2-windows.md](docs/docker-engine-wsl2-windows.md) — Setup e troubleshooting de Docker Engine no Windows via WSL2
